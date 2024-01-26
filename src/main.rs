@@ -39,8 +39,10 @@ fn check_commits(api_key: &str, name: &str, repo: &Repo, email: &str) -> Result<
         .filter(|s| s == email)
         .collect();
 
+    if bad_emails.len() == 0 { return Ok(())}
+
     println!("Repo: {}", repo.name);
-    println!("Number of bad emails: {}", bad_emails.len());
+    println!("Number of bad emails: {}\n", bad_emails.len());
 
     Ok(())
 }
