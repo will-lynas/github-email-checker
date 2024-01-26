@@ -2,50 +2,32 @@ use reqwest::{Error, blocking::Client};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Repo {
-    name: String
+fn main() -> Result<(), Error> {
+    let name = "will-lynas";
+    get_repos(name)?
+        .into_iter()
+        .for_each(|repo| print_commits(repo).unwrap());
+    Ok(())
 }
 
-fn main() -> Result<(), Error> {
-    let url = "https://api.github.com/users/will-lynas/repos";
+fn get_repos(name: &str) -> Result<Vec<Repo>, Error> {
+    let url = format!("https://api.github.com/users/{name}/repos");
 
     let client = Client::new();
     let response = client.get(url)
         .header(USER_AGENT, "MyRustApp")
         .send()?;
 
-    let repos: Vec<Repo>;
     if response.status().is_success() {
-        repos = response.json()?;
+        let repos = response.json()?;
+        Ok(repos)
     } else {
-        return Err(response.error_for_status().unwrap_err());
+        Err(response.error_for_status().unwrap_err())
     }
-
-    repos.into_iter()
-    .map(|repo| repo.name)
-    .for_each(|name| get_commits(&name).unwrap());
-
-    Ok(())
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Commit {
-    commit: BabyCommit,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct BabyCommit {
-    author: Author,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Author {
-    email: String,
-}
-
-fn get_commits(repo: &str) -> Result<(), Error> {
-    let url = format!("https://api.github.com/repos/will-lynas/{}/commits", repo);
+fn print_commits(repo: Repo) -> Result<(), Error> {
+    let url = format!("https://api.github.com/repos/will-lynas/{}/commits", repo.name);
 
     let client = Client::new();
     let response = client.get(&url)
@@ -63,8 +45,29 @@ fn get_commits(repo: &str) -> Result<(), Error> {
         .map(|commit| commit.commit.author.email)
         .collect();
 
-    println!("Repo: {}", repo);
-    println!("Emails: {:?}", emails);
+    println!("Repo: {}", repo.name);
+    // println!("Emails: {:?}", emails);
+    println!("Number of commits: {:?}", emails.len());
 
     Ok(())
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Repo {
+    name: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Commit {
+    commit: InnerCommit,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InnerCommit {
+    author: Author,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Author {
+    email: String,
 }
