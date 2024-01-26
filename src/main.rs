@@ -4,8 +4,13 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 fn main() -> Result<(), Error> {
-    let api_key = env::var("GITHUB_API_KEY").unwrap();
+    const GITHUB_API_KEY: &str = "GITHUB_API_KEY";
+    let api_key = env::var(GITHUB_API_KEY).expect(&format!("{} not set", GITHUB_API_KEY));
     let args: Vec<String> = env::args().collect();
+    if args.len() != 3 {
+        println!("Usage: {} <github username> <email>", args[0]);
+        return Ok(());
+    }
     let name = &args[1];
     let email = &args[2];
     get_repos(&api_key, &name)?
